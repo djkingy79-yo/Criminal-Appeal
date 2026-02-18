@@ -1,7 +1,14 @@
 # Python
+*.py[cod]
+*$py.class
+*.so
+.Python
 
 # Virtual environments
 venv/
+env/
+ENV/
+.venv
 
 # Compiled Python files
 __pycache__/
@@ -9,6 +16,7 @@ __pycache__/
 
 # Environment variables
 .env
+.env.local
 
 # pytest cache
 .pytest_cache/
@@ -18,3 +26,41 @@ instance/
 
 # Database files
 *.db
+*.sqlite
+*.sqlite3
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Log files
+*.log
+logs/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest
+.pytest_cache/
+.tox/
