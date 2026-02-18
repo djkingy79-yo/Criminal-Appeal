@@ -21,6 +21,7 @@ The application is built using a microservices architecture, enabling scalabilit
 - `GET /api/docs`: Access documentation links
 
 ## Documentation Links
+- [Configuration Guide](CONFIGURATION.md) - Database and firewall setup
 - [API Documentation](https://your-api-doc-link)
 - [User Guide](https://your-user-guide-link)
 - [Contribution Guidelines](CONTRIBUTING.md)
