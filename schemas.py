@@ -59,7 +59,35 @@ class DocumentSchema(Schema):
         """Validate content length and ensure it's not just whitespace."""
         if not value or not value.strip():
             raise ValidationError('Content cannot be empty or whitespace only')
-        if len(value) > 1000000:  # 1MB max
+        if len(value) > 1048576:  # 1MB max
+            raise ValidationError('Content is too large (max 1MB)')
+
+
+class DocumentUpdateSchema(Schema):
+    """Schema for validating document update data."""
+    title = fields.Str(
+        validate=validate.Length(min=1, max=200)
+    )
+    content = fields.Str(
+        validate=validate.Length(min=1)
+    )
+    document_type = fields.Str(
+        validate=validate.OneOf([
+            'case_info',
+            'brief',
+            'case_notes',
+            'judgment',
+            'sentencing_report',
+            'psychological_report'
+        ])
+    )
+    
+    @validates('content')
+    def validate_content(self, value):
+        """Validate content length and ensure it's not just whitespace."""
+        if not value or not value.strip():
+            raise ValidationError('Content cannot be empty or whitespace only')
+        if len(value) > 1048576:  # 1MB max
             raise ValidationError('Content is too large (max 1MB)')
 
 

@@ -17,7 +17,6 @@ class TestConfig(Config):
     DEBUG = False
     FLASK_ENV = 'testing'
     ALLOWED_HOSTS = ['localhost', 'testserver']
-    WTF_CSRF_ENABLED = False
 
 
 @pytest.fixture

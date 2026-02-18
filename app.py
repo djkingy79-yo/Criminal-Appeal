@@ -17,7 +17,7 @@ from marshmallow import ValidationError
 
 from config import Config
 from models import db, Case, Document as DocumentModel, User
-from schemas import CaseSchema, DocumentSchema, UserSchema, UserLoginSchema
+from schemas import CaseSchema, DocumentSchema, DocumentUpdateSchema, UserSchema, UserLoginSchema
 
 
 # Initialize Flask extensions
@@ -231,13 +231,12 @@ def register_routes(app):
         
         elif request.method == 'PUT':
             try:
-                schema = DocumentSchema()
+                schema = DocumentUpdateSchema()
                 data = schema.load(request.get_json())
                 
                 # Update document fields
                 for key, value in data.items():
-                    if key != 'case_id':  # Don't allow changing case_id
-                        setattr(document, key, value)
+                    setattr(document, key, value)
                 
                 db.session.commit()
                 app.logger.info(f"Updated document: {document.title}")
