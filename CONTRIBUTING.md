@@ -27,7 +27,6 @@ The `main` branch is protected to maintain code quality and prevent accidental c
 - **Direct pushes are not allowed** - All changes must go through pull requests
 - **Pull requests require at least 1 approval** before merging
 - **Force pushes and deletions are disabled** to protect the repository history
-- **Branches must be up to date** with the base branch before merging
 - All conversations must be resolved before merging
 
 For more information about branch protection, see [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md).
