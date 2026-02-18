@@ -10,6 +10,9 @@ on:
       - main
   workflow_dispatch: true
 
+permissions:
+  contents: read
+
 jobs:
   check-branch-protection:
     runs-on: ubuntu-latest
