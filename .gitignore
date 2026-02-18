@@ -1,40 +1,20 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*.$py.class
+# Python
 
-# Distribution / packaging
-.Python
-env/
+# Virtual environments
 venv/
-ENV/
-env.bak/
-venv.bak/
-dist/
-build/
-*.egg-info/
-.eggs/
 
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints
+# Compiled Python files
+__pycache__/
+*.pyc
 
-# Pytest
-.cache/
-
-# Environments
+# Environment variables
 .env
-.env.*
 
-# VS Code settings
-.vscode/
+# pytest cache
+.pytest_cache/
 
-# Large files
-*.csv
-*.log
-*.sqlite3
+# Flask instance folder
+instance/
 
-# Sensitive data
-secrets.json
-secrets.yaml
-config.ini
-passwords.txt
+# Database files
+*.db
