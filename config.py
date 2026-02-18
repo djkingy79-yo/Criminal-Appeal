@@ -6,7 +6,6 @@ It securely sources sensitive information from environment variables.
 """
 
 import os
-import sys
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
