@@ -1,121 +1,76 @@
-from flask import Flask, jsonify, request
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-import os
+from flask_marshmallow import Marshmallow
 
-# Initialize Flask app
+# Initialize app
 app = Flask(__name__)
 
-# Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///criminal_appeal.db')
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
-
-# Initialize database
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///appeals.db'
 db = SQLAlchemy(app)
+ma = Marshmallow(app)
 
-# Simple User model for demonstration
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    name = db.Column(db.String(120), nullable=False)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'email': self.email,
-            'name': self.name
-        }
-
-# Simple Appeal model for demonstration
+# Database model
 class Appeal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    status = db.Column(db.String(50), default='pending')
-    created_at = db.Column(db.DateTime, default=db.func.now())
+    case_number = db.Column(db.String(255), unique=True)
+    appellant_name = db.Column(db.String(255))
+    appeal_date = db.Column(db.Date)
+    status = db.Column(db.String(100))
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'status': self.status,
-            'created_at': self.created_at.isoformat()
-        }
+    def __init__(self, case_number, appellant_name, appeal_date, status):
+        self.case_number = case_number
+        self.appellant_name = appellant_name
+        self.appeal_date = appeal_date
+        self.status = status
 
-# API Routes
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    """Health check endpoint"""
-    return jsonify({'status': 'healthy'}), 200
+# Schema
+class AppealSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Appeal
 
-@app.route('/api/register', methods=['POST'])
-def register():
-    """Register a new user"""
-    data = request.get_json()
-    
-    if not data or not data.get('email') or not data.get('name'):
-        return jsonify({'error': 'Missing email or name'}), 400
-    
-    try:
-        user = User(email=data['email'], name=data['name'])
-        db.session.add(user)
-        db.session.commit()
-        return jsonify({'message': 'User registered successfully', 'user': user.to_dict()}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+# Initialize database
+with app.app_context():
+    db.create_all()
 
-@app.route('/api/login', methods=['POST'])
-def login():
-    """Authenticate a user"""
-    data = request.get_json()
-    
-    if not data or not data.get('email'):
-        return jsonify({'error': 'Missing email'}), 400
-    
-    user = User.query.filter_by(email=data['email']).first()
-    
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-    
-    return jsonify({'message': 'Login successful', 'user': user.to_dict()}), 200
-
+# API Endpoints
 @app.route('/api/appeals', methods=['POST'])
-def submit_appeal():
-    """Submit a new appeal"""
-    data = request.get_json()
-    
-    if not data or not data.get('user_id'):
-        return jsonify({'error': 'Missing user_id'}), 400
-    
-    try:
-        appeal = Appeal(user_id=data['user_id'], status='pending')
-        db.session.add(appeal)
-        db.session.commit()
-        return jsonify({'message': 'Appeal submitted successfully', 'appeal': appeal.to_dict()}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+def add_appeal():
+    case_number = request.json['case_number']
+    appellant_name = request.json['appellant_name']
+    appeal_date = request.json['appeal_date']
+    status = request.json['status']
 
-@app.route('/api/appeals/<int:appeal_id>', methods=['GET'])
-def get_appeal(appeal_id):
-    """Retrieve status of an appeal"""
-    appeal = Appeal.query.get(appeal_id)
-    
-    if not appeal:
-        return jsonify({'error': 'Appeal not found'}), 404
-    
-    return jsonify({'appeal': appeal.to_dict()}), 200
+    new_appeal = Appeal(case_number, appellant_name, appeal_date, status)
+    db.session.add(new_appeal)
+    db.session.commit()
 
-@app.route('/api/docs', methods=['GET'])
-def get_docs():
-    """Access documentation links"""
-    return jsonify({
-        'documentation': {
-            'api': '/docs/api.md',
-            'user_guide': '/docs/user-guide.md',
-            'contributing': '/CONTRIBUTING.md'
-        }
-    }), 200
+    return AppealSchema().jsonify(new_appeal)
 
+@app.route('/api/appeals', methods=['GET'])
+def get_appeals():
+    all_appeals = Appeal.query.all()
+    return AppealSchema(many=True).jsonify(all_appeals)
+
+@app.route('/api/appeals/<int:id>', methods=['GET'])
+def get_appeal(id):
+    appeal = Appeal.query.get(id)
+    return AppealSchema().jsonify(appeal)
+
+@app.route('/api/appeals/<int:id>', methods=['PUT'])
+def update_appeal(id):
+    appeal = Appeal.query.get(id)
+    appeal.status = request.json['status']
+    db.session.commit()
+    return AppealSchema().jsonify(appeal)
+
+@app.route('/api/appeals/<int:id>', methods=['DELETE'])
+def delete_appeal(id):
+    appeal = Appeal.query.get(id)
+    db.session.delete(appeal)
+    db.session.commit()
+    return '', 204
+
+# Run the app
 if __name__ == '__main__':
-    port = int(os.getenv('API_PORT', 5000))
-    app.run(debug=True, port=port)
+    app.run(debug=True)
