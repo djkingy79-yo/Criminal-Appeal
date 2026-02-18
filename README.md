@@ -1,35 +1,26 @@
 # Criminal Appeal
 
+## Project Overview
+The Criminal Appeal project is designed to assist individuals in navigating the complexities involved in the criminal appeal process.
+
 ## Features
-- Comprehensive legal reasoning
-- Easy to use interface
-- Supports multiple appeal scenarios
+- User registration and authentication
+- Submission of appeal documents
+- Tracking of appeal status
+- Notifications for updates and deadlines
+- Integration with legal databases
 
-## Getting Started
-### Prerequisites
-- Python 3.x
-- Required libraries: `flask`, `SQLAlchemy`
+## Architecture
+The application is built using a microservices architecture, enabling scalability and flexibility. Core services include user management, appeal processing, and notification dispatch.
 
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/djkingy79-yo/Criminal-Appeal.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd Criminal-Appeal
-   ```
-3. Install the required libraries:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## API Endpoints
+- `POST /api/register`: Register a new user
+- `POST /api/login`: Authenticate a user
+- `POST /api/appeals`: Submit a new appeal
+- `GET /api/appeals/:id`: Retrieve status of an appeal
+- `GET /api/docs`: Access documentation links
 
-## Usage
-1. Run the application:
-   ```bash
-   python app.py
-   ```
-2. Access the web interface at `http://localhost:5000`.
-
-## Legal Disclaimer
-This application is intended for informational purposes only and does not constitute legal advice. Always consult with a qualified attorney for legal matters.
+## Documentation Links
+- [API Documentation](https://your-api-doc-link)
+- [User Guide](https://your-user-guide-link)
+- [Contribution Guidelines](https://your-contribution-guidelines-link)
