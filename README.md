@@ -23,4 +23,6 @@ The application is built using a microservices architecture, enabling scalabilit
 ## Documentation Links
 - [API Documentation](https://your-api-doc-link)
 - [User Guide](https://your-user-guide-link)
-- [Contribution Guidelines](https://your-contribution-guidelines-link)
+- [Contribution Guidelines](CONTRIBUTING.md)
+- [Branch Protection Setup](BRANCH_PROTECTION.md) - For repository administrators
+- [Quick Setup Guide](.github/SETUP.md) - Getting started for admins

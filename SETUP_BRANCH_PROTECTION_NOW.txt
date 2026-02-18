@@ -1,0 +1,37 @@
+⚠️  IMPORTANT: Branch Protection Not Configured
+=====================================================
+
+Your main branch is currently unprotected and vulnerable to:
+- Force pushes that can overwrite history
+- Accidental deletion
+- Direct commits without code review
+
+⚡ QUICK FIX (2 minutes):
+--------------------
+
+Option 1: Automated (Recommended)
+```bash
+./.github/setup-branch-protection.sh
+```
+
+Option 2: Manual Setup
+1. Go to: https://github.com/djkingy79-yo/Criminal-Appeal/settings/branches
+2. Click "Add rule"
+3. Enter "main" as branch name
+4. Enable:
+   ✅ Require pull request before merging (1 approval)
+   ✅ Require conversation resolution
+   ⛔ Allow force pushes (UNCHECK)
+   ⛔ Allow deletions (UNCHECK)
+5. Save
+
+📚 Full Documentation:
+--------------------
+- BRANCH_PROTECTION.md - Complete setup guide
+- .github/SETUP.md - Quick start for admins
+
+✅ After Setup:
+-------------
+- The GitHub Actions workflow will automatically verify protection
+- Contributors will need to use pull requests
+- Force pushes and deletions will be blocked
