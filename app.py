@@ -1,76 +1,46 @@
-from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
+# app.py
 
-# Initialize app
-app = Flask(__name__)
+class Document:
+    def __init__(self, title, content):
+        self.title = title
+        self.content = content
 
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///appeals.db'
-db = SQLAlchemy(app)
-ma = Marshmallow(app)
 
-# Database model
-class Appeal(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    case_number = db.Column(db.String(255), unique=True)
-    appellant_name = db.Column(db.String(255))
-    appeal_date = db.Column(db.Date)
-    status = db.Column(db.String(100))
+class CaseManagementSystem:
+    def __init__(self):
+        self.documents = {
+            "case_info": None,
+            "briefs": [],
+            "case_notes": [],
+            "judgments": [],
+            "sentencing_reports": [],
+            "psychological_reports": []
+        }
 
-    def __init__(self, case_number, appellant_name, appeal_date, status):
-        self.case_number = case_number
-        self.appellant_name = appellant_name
-        self.appeal_date = appeal_date
-        self.status = status
+    def upload_case_info(self, title, content):
+        self.documents["case_info"] = Document(title, content)
 
-# Schema
-class AppealSchema(ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = Appeal
+    def upload_brief(self, title, content):
+        self.documents["briefs"].append(Document(title, content))
 
-# Initialize database
-with app.app_context():
-    db.create_all()
+    def upload_case_notes(self, title, content):
+        self.documents["case_notes"].append(Document(title, content))
 
-# API Endpoints
-@app.route('/api/appeals', methods=['POST'])
-def add_appeal():
-    case_number = request.json['case_number']
-    appellant_name = request.json['appellant_name']
-    appeal_date = request.json['appeal_date']
-    status = request.json['status']
+    def upload_judgment(self, title, content):
+        self.documents["judgments"].append(Document(title, content))
 
-    new_appeal = Appeal(case_number, appellant_name, appeal_date, status)
-    db.session.add(new_appeal)
-    db.session.commit()
+    def upload_sentencing_report(self, title, content):
+        self.documents["sentencing_reports"].append(Document(title, content))
 
-    return AppealSchema().jsonify(new_appeal)
+    def upload_psychological_report(self, title, content):
+        self.documents["psychological_reports"].append(Document(title, content))
 
-@app.route('/api/appeals', methods=['GET'])
-def get_appeals():
-    all_appeals = Appeal.query.all()
-    return AppealSchema(many=True).jsonify(all_appeals)
+    def analyze_merit(self):
+        # Perform an analysis of the grounds of merit based on documents
+        # Placeholder for analysis logic
+        return "Analysis of grounds of merit completed."
 
-@app.route('/api/appeals/<int:id>', methods=['GET'])
-def get_appeal(id):
-    appeal = Appeal.query.get(id)
-    return AppealSchema().jsonify(appeal)
 
-@app.route('/api/appeals/<int:id>', methods=['PUT'])
-def update_appeal(id):
-    appeal = Appeal.query.get(id)
-    appeal.status = request.json['status']
-    db.session.commit()
-    return AppealSchema().jsonify(appeal)
-
-@app.route('/api/appeals/<int:id>', methods=['DELETE'])
-def delete_appeal(id):
-    appeal = Appeal.query.get(id)
-    db.session.delete(appeal)
-    db.session.commit()
-    return '', 204
-
-# Run the app
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    cms = CaseManagementSystem()
+    print("Criminal Appeal Document Management System")
