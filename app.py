@@ -30,13 +30,29 @@ except ImportError:
 # Initialize Flask app
 app = Flask(__name__)
 
+# Configure logging early
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+)
+logger = logging.getLogger(__name__)
+
 # Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///criminal_appeal.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
 app.config['ALLOWED_EXTENSIONS'] = {'pdf', 'docx', 'txt'}
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# SECRET_KEY is required for production - fail if not set
+secret_key = os.environ.get('SECRET_KEY')
+if not secret_key:
+    if os.environ.get('FLASK_ENV') == 'development':
+        logger.warning('Using default SECRET_KEY for development. DO NOT use in production!')
+        secret_key = 'dev-secret-key-DO-NOT-USE-IN-PRODUCTION'
+    else:
+        raise ValueError('SECRET_KEY environment variable must be set in production')
+app.config['SECRET_KEY'] = secret_key
 
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -44,17 +60,6 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Initialize extensions
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('app.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
 
 
 # =====================================================================
@@ -237,6 +242,40 @@ barrister_reports_schema = BarristerReportSchema(many=True)
 # HELPER FUNCTIONS
 # =====================================================================
 
+def parse_datetime(date_string):
+    """
+    Robustly parse datetime string in various ISO 8601 formats.
+    
+    Args:
+        date_string (str): Date string to parse
+        
+    Returns:
+        datetime: Parsed datetime object
+        
+    Raises:
+        ValueError: If the date string cannot be parsed
+    """
+    if not date_string:
+        raise ValueError("Date string cannot be empty")
+    
+    # Handle common ISO 8601 variations
+    # Replace 'Z' with '+00:00' for timezone-aware parsing
+    if date_string.endswith('Z'):
+        date_string = date_string[:-1] + '+00:00'
+    
+    try:
+        return datetime.fromisoformat(date_string)
+    except ValueError as e:
+        # Try alternative formats
+        for fmt in ['%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d']:
+            try:
+                return datetime.strptime(date_string, fmt)
+            except ValueError:
+                continue
+        
+        raise ValueError(f"Unable to parse date string: {date_string}. Use ISO 8601 format (e.g., '2024-01-01T12:00:00' or '2024-01-01T12:00:00Z')")
+
+
 def allowed_file(filename):
     """
     Check if the file extension is allowed.
@@ -315,11 +354,28 @@ def extract_text_from_txt(file_path):
         str: Extracted text content or error message
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            text = file.read()
+        # Try UTF-8 first
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                text = file.read()
+        except UnicodeDecodeError:
+            # Fallback to other common encodings
+            for encoding in ['latin-1', 'cp1252', 'iso-8859-1']:
+                try:
+                    with open(file_path, 'r', encoding=encoding) as file:
+                        text = file.read()
+                    logger.info(f"Successfully read file with {encoding} encoding: {file_path}")
+                    break
+                except UnicodeDecodeError:
+                    continue
+            else:
+                raise UnicodeDecodeError('multiple', b'', 0, 0, 'Failed to decode file with common encodings')
         
         logger.info(f"Successfully extracted text from TXT: {file_path}")
         return text.strip()
+    except UnicodeDecodeError as e:
+        logger.error(f"Unicode decoding error for TXT {file_path}: {str(e)}")
+        return f"Error: Unable to decode file. File may not be a text file or uses an unsupported encoding."
     except Exception as e:
         logger.error(f"Error extracting text from TXT {file_path}: {str(e)}")
         return f"Error extracting text: {str(e)}"
@@ -380,8 +436,15 @@ def auto_create_timeline_event(document):
 
 def analyze_grounds_of_merit(case):
     """
-    Analyze potential grounds of merit for an appeal (placeholder implementation).
-    Creates sample analyses with NSW and Federal law references.
+    Analyze potential grounds of merit for an appeal.
+    
+    **PLACEHOLDER IMPLEMENTATION**: This function currently returns sample analyses.
+    In production, this should be replaced with actual AI-powered analysis using OpenAI API
+    or similar NLP service to analyze case documents and identify real grounds of merit.
+    
+    TODO: Integrate with OpenAI API to analyze extracted text from case documents
+    TODO: Implement NLP-based extraction of relevant legal issues
+    TODO: Implement case law matching and precedent analysis
     
     Args:
         case (Case): The case to analyze
@@ -391,7 +454,8 @@ def analyze_grounds_of_merit(case):
     """
     analyses = []
     
-    # Sample grounds of merit with NSW law references
+    # PLACEHOLDER: Sample grounds of merit with NSW law references
+    # In production, these would be generated by analyzing actual case documents
     sample_grounds = [
         {
             'ground': 'Error in Law - Judicial Misdirection',
@@ -719,8 +783,11 @@ def upload_document(case_id):
         if not title:
             return jsonify({'error': 'Document title is required'}), 400
         
-        # Secure the filename and save
+        # Secure the filename and validate
         filename = secure_filename(file.filename)
+        if not filename or '.' not in filename:
+            return jsonify({'error': 'Invalid filename. Please provide a valid file with an extension.'}), 400
+        
         file_extension = filename.rsplit('.', 1)[1].lower()
         
         # Create case-specific directory
@@ -878,18 +945,30 @@ def delete_document(document_id):
         
         file_path = document.file_path
         
-        # Delete file
+        # Try to delete file first - if it fails, don't delete database record
+        file_deleted = False
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
+                file_deleted = True
+                logger.info(f"Deleted file: {file_path}")
             except OSError as e:
-                logger.warning(f"Could not delete file {file_path}: {str(e)}")
+                logger.error(f"Failed to delete file {file_path}: {str(e)}")
+                return jsonify({'error': 'Failed to delete file from disk', 'details': str(e)}), 500
+        else:
+            # File doesn't exist, but we can still delete the DB record
+            logger.warning(f"File not found on disk: {file_path}")
+            file_deleted = True
         
-        db.session.delete(document)
-        db.session.commit()
-        
-        logger.info(f"Deleted document {document_id}")
-        return jsonify({'message': 'Document deleted successfully'}), 200
+        # Only delete database record if file was successfully deleted or didn't exist
+        if file_deleted:
+            db.session.delete(document)
+            db.session.commit()
+            
+            logger.info(f"Deleted document {document_id}")
+            return jsonify({'message': 'Document deleted successfully'}), 200
+        else:
+            return jsonify({'error': 'Failed to delete document'}), 500
         
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -944,9 +1023,9 @@ def create_timeline_event(case_id):
         
         # Parse event date
         try:
-            event_date = datetime.fromisoformat(data['event_date'].replace('Z', '+00:00'))
-        except ValueError:
-            return jsonify({'error': 'Invalid date format. Use ISO format (YYYY-MM-DDTHH:MM:SS)'}), 400
+            event_date = parse_datetime(data['event_date'])
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
         
         event = TimelineEvent(
             case_id=case_id,
@@ -1056,8 +1135,9 @@ def update_timeline_event(event_id):
         
         if 'event_date' in data:
             try:
-                event.event_date = datetime.fromisoformat(data['event_date'].replace('Z', '+00:00'))
-            except ValueError:
+                event.event_date = parse_datetime(data['event_date'])
+            except ValueError as e:
+                return jsonify({'error': str(e)}), 400
                 return jsonify({'error': 'Invalid date format'}), 400
         
         if 'event_type' in data:
@@ -1524,8 +1604,9 @@ def health_check():
         JSON response with health status
     """
     try:
-        # Try to query database
-        db.session.execute(db.text('SELECT 1'))
+        # Verify database connection by checking if it's usable
+        # This is safer than using db.text() which could introduce SQL injection if pattern is copied
+        db.session.query(Case).limit(1).all()
         db_status = 'healthy'
     except Exception as e:
         logger.error(f"Database health check failed: {str(e)}")
