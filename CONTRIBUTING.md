@@ -22,6 +22,16 @@ To contribute code, follow these steps:
 4. Test your changes thoroughly.
 5. Submit a pull request with a clear description of your changes.
 
+### Branch Protection Policy
+The `main` branch is protected to maintain code quality and prevent accidental changes:
+- **Direct pushes are not allowed** - All changes must go through pull requests
+- **Pull requests require at least 1 approval** before merging
+- **Force pushes and deletions are disabled** to protect the repository history
+- **Branches must be up to date** with the base branch before merging
+- All conversations must be resolved before merging
+
+For more information about branch protection, see [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md).
+
 ## Code of Conduct
 Please read our [Code of Conduct](CODE_OF_CONDUCT.md) to ensure a welcoming environment for all contributors.
 
