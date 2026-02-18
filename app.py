@@ -16,7 +16,7 @@ from flask_bcrypt import Bcrypt
 from marshmallow import ValidationError
 
 from config import Config
-from models import db, Case, Document, User
+from models import db, Case, Document as DocumentModel, User
 from schemas import CaseSchema, DocumentSchema, UserSchema, UserLoginSchema
 
 
@@ -107,7 +107,7 @@ def register_routes(app):
         """Health check endpoint."""
         return jsonify({
             'status': 'healthy',
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now().isoformat()
         }), 200
     
     # Case routes
@@ -190,9 +190,9 @@ def register_routes(app):
         if request.method == 'GET':
             case_id = request.args.get('case_id', type=int)
             if case_id:
-                docs = Document.query.filter_by(case_id=case_id).all()
+                docs = DocumentModel.query.filter_by(case_id=case_id).all()
             else:
-                docs = Document.query.all()
+                docs = DocumentModel.query.all()
             return jsonify([doc.to_dict() for doc in docs]), 200
         
         elif request.method == 'POST':
@@ -207,7 +207,7 @@ def register_routes(app):
                     return jsonify({'error': 'Case not found'}), 404
                 
                 # Create new document
-                document = Document(**data)
+                document = DocumentModel(**data)
                 db.session.add(document)
                 db.session.commit()
                 
@@ -224,7 +224,7 @@ def register_routes(app):
     @app.route('/api/documents/<int:doc_id>', methods=['GET', 'PUT', 'DELETE'])
     def document_detail(doc_id):
         """Get, update, or delete a specific document."""
-        document = Document.query.get_or_404(doc_id)
+        document = DocumentModel.query.get_or_404(doc_id)
         
         if request.method == 'GET':
             return jsonify(document.to_dict()), 200
@@ -266,7 +266,7 @@ def register_routes(app):
     def analyze_case(case_id):
         """Analyze the merit of a case based on its documents."""
         case = Case.query.get_or_404(case_id)
-        documents = Document.query.filter_by(case_id=case_id).all()
+        documents = DocumentModel.query.filter_by(case_id=case_id).all()
         
         if not documents:
             return jsonify({'error': 'No documents found for this case'}), 400
@@ -278,7 +278,7 @@ def register_routes(app):
             'document_count': len(documents),
             'analysis': 'Analysis of grounds of merit completed.',
             'recommendation': 'Further review required',
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now().isoformat()
         }
         
         app.logger.info(f"Analyzed case: {case.case_number}")

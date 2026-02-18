@@ -4,7 +4,7 @@ Unit tests for API endpoints.
 
 import json
 import pytest
-from models import Case, Document
+from models import Case, Document as DocumentModel
 
 
 class TestHealthEndpoint:
@@ -185,13 +185,13 @@ class TestDocumentEndpoints:
             db.session.add(case)
             db.session.commit()
             
-            doc1 = Document(
+            doc1 = DocumentModel(
                 case_id=case.id,
                 title='Doc 1',
                 content='Content 1',
                 document_type='brief'
             )
-            doc2 = Document(
+            doc2 = DocumentModel(
                 case_id=case.id,
                 title='Doc 2',
                 content='Content 2',
@@ -214,7 +214,7 @@ class TestDocumentEndpoints:
             db.session.add(case)
             db.session.commit()
             
-            doc = Document(
+            doc = DocumentModel(
                 case_id=case.id,
                 title='Test Doc',
                 content='Test Content',
@@ -241,7 +241,7 @@ class TestAnalysisEndpoint:
             db.session.add(case)
             db.session.commit()
             
-            doc = Document(
+            doc = DocumentModel(
                 case_id=case.id,
                 title='Test Doc',
                 content='Test Content',

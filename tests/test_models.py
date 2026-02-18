@@ -4,7 +4,7 @@ Unit tests for database models.
 
 import pytest
 from datetime import datetime
-from models import Case, Document, User
+from models import Case, Document as DocumentModel, User
 
 
 class TestCaseModel:
@@ -64,7 +64,7 @@ class TestDocumentModel:
             db.session.commit()
             
             # Create a document
-            doc = Document(
+            doc = DocumentModel(
                 case_id=case.id,
                 title='Test Document',
                 content='This is test content',
@@ -88,13 +88,13 @@ class TestDocumentModel:
             db.session.add(case)
             db.session.commit()
             
-            doc1 = Document(
+            doc1 = DocumentModel(
                 case_id=case.id,
                 title='Doc 1',
                 content='Content 1',
                 document_type='brief'
             )
-            doc2 = Document(
+            doc2 = DocumentModel(
                 case_id=case.id,
                 title='Doc 2',
                 content='Content 2',

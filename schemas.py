@@ -21,7 +21,7 @@ class CaseSchema(Schema):
     )
     status = fields.Str(
         validate=validate.OneOf(['pending', 'active', 'closed', 'appealed']),
-        missing='pending'
+        load_default='pending'
     )
 
 
@@ -82,7 +82,7 @@ class UserSchema(Schema):
     )
     role = fields.Str(
         validate=validate.OneOf(['user', 'admin', 'lawyer']),
-        missing='user'
+        load_default='user'
     )
     
     @validates('username')
