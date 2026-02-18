@@ -18,3 +18,13 @@ instance/
 
 # Database files
 *.db
+
+# Upload files
+uploads/
+
+# SQLite database
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log
